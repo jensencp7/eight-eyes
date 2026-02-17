@@ -3,10 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legacy SST</title>
+    <title>Test Evidence Collection</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #preview { display: flex; flex-wrap: wrap; }
+        #preview img { max-width: 200px; margin: 5px; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Legacy SST</h1>
-    <p>This is a Test Evidence Collection application.</p>
+    <h1>Test Evidence Collection Application</h1>
+
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <button id="uploadBtn">Upload</button>
+    <div id="preview"></div>
+    <div id="results">
+        <h2>Tracking</h2>
+        <div class="result">
+            <label>Pass:</label> <input type="radio" name="status" value="pass">
+            <label>Fail:</label> <input type="radio" name="status" value="fail">
+        </div>
+    </div>
+    <button id="exportBtn">Export as ZIP</button>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const preview = document.getElementById('preview');
+        const results = document.getElementById('results');
+        const exportBtn = document.getElementById('exportBtn');
+
+        let filesArray = [];
+
+        uploadBtn.addEventListener('click', () => {
+            const files = fileInput.files;
+            [...files].forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                    filesArray.push(file);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        exportBtn.addEventListener('click', () => {
+            if (filesArray.length === 0) {
+                alert('No files to export!');
+                return;
+            }
+            const zip = new JSZip();
+            filesArray.forEach(file => {
+                zip.file(file.name, file);
+            });
+            zip.generateAsync({type: 'blob'}).then(content => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = 'evidence.zip';
+                link.click();
+            });
+        });
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js'></script>
 </body>
 </html>
