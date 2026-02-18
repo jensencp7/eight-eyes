@@ -305,13 +305,16 @@
     </div>
 
     <script>
+        // ============================================
+        // CONFIGURATION - Edit this to customize your form
+        // ============================================
         const CONFIG = {
             initialFields: [
                 { id: 'testerName', label: 'Name', type: 'text', required: true },
                 { id: 'testerId', label: 'ID Number', type: 'text', required: true },
                 { id: 'applicationReason', label: 'Application Reason', type: 'text', required: true }
             ],
-
+            
             steps: [
                 {
                     id: 'Sign In',
@@ -412,10 +415,14 @@
                     id: 'Capture Application Saved',
                     title: 'Capture Application Saved',
                     description: 'Capture the Application Saved'
-                }
+                },
+                
             ]
         };
 
+        // ============================================
+        // APPLICATION STATE
+        // ============================================
         const state = {
             currentStep: -1,
             testerInfo: {},
@@ -424,19 +431,25 @@
             capturedPhoto: null
         };
 
+        // ============================================
+        // INITIALIZATION
+        // ============================================
         function init() {
             renderInitialForm();
         }
 
+        // ============================================
+        // RENDER FUNCTIONS
+        // ============================================
         function renderInitialForm() {
             updateProgress('Initial Information', 0);
-
+            
             const fieldsHTML = CONFIG.initialFields.map(field => `
                 <div class="form-group">
                     <label for="${field.id}">${field.label}${field.required ? ' *' : ''}</label>
-                    <input
-                        type="${field.type}"
-                        id="${field.id}"
+                    <input 
+                        type="${field.type}" 
+                        id="${field.id}" 
                         ${field.required ? 'required' : ''}
                     />
                 </div>
@@ -478,7 +491,8 @@
 
                 <div class="camera-section">
                     <label>Evidence Photo *</label>
-
+                    
+                    <!-- Photo Preview (shown when photo exists) -->
                     <div id="photoPreview" class="${currentData.photo ? '' : 'hidden'}">
                         ${currentData.photo ? `
                             <div class="image-preview">
@@ -488,7 +502,9 @@
                         ` : ''}
                     </div>
 
+                    <!-- Capture Options (shown when no photo) -->
                     <div id="captureOptions" class="${currentData.photo ? 'hidden' : ''}">
+                        <!-- Camera Section -->
                         <div id="cameraContainer" class="hidden">
                             <video id="video" autoplay playsinline></video>
                             <div class="camera-controls">
@@ -497,13 +513,14 @@
                             </div>
                         </div>
 
+                        <!-- Option Buttons -->
                         <div id="optionButtons">
                             <div class="camera-controls">
                                 <button class="btn-primary" onclick="startCamera()">📷 Use Camera</button>
                             </div>
-
+                            
                             <div style="text-align: center; margin: 16px 0; color: #999; font-size: 14px;">OR</div>
-
+                            
                             <div class="file-upload" onclick="document.getElementById('fileInput').click()">
                                 <div class="file-upload-icon">📁</div>
                                 <p><strong>Upload an image</strong></p>
@@ -538,11 +555,15 @@
                     </button>
                 </div>
             `;
+
+            if (!currentData.photo) {
+                // Don't auto-start camera - let user choose
+            }
         }
 
         function renderCompletion() {
             stopCamera();
-
+            
             document.getElementById('appContent').innerHTML = `
                 <div class="success-screen">
                     <div class="success-icon">✓</div>
@@ -553,13 +574,19 @@
             `;
         }
 
+        // ============================================
+        // CAMERA FUNCTIONS
+        // ============================================
         async function startCamera() {
             try {
                 stopCamera();
 
                 const constraints = {
                     video: {
-                        facingMode: 'environment'
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        aspectRatio: { ideal: 16/9 }
                     }
                 };
 
@@ -596,13 +623,13 @@
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
+            
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0);
-
-            const photoData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            const photoData = canvas.toDataURL('image/jpeg', 0.98);
             state.stepData[state.currentStep].photo = photoData;
-
+            
             stopCamera();
             renderStep(state.currentStep);
         }
@@ -624,6 +651,9 @@
             }
         }
 
+        // ============================================
+        // FORM FUNCTIONS
+        // ============================================
         function submitInitialForm() {
             let isValid = true;
             CONFIG.initialFields.forEach(field => {
@@ -686,13 +716,16 @@
             renderStep(state.currentStep);
         }
 
+        // ============================================
+        // EXPORT FUNCTIONS
+        // ============================================
         async function downloadEvidence() {
             const zip = new JSZip();
 
             const testerInfoText = Object.entries(state.testerInfo)
                 .map(([key, value]) => `${key}: ${value}`)
                 .join('\n');
-
+            
             zip.file('00_tester_info.txt', testerInfoText);
 
             for (let i = 0; i < state.stepData.length; i++) {
@@ -708,7 +741,7 @@
 Status: ${stepData.status.toUpperCase()}
 Notes: ${stepData.notes || 'No notes provided'}
 Timestamp: ${new Date().toISOString()}`;
-
+                
                 stepFolder.file('step_info.txt', stepInfo);
             }
 
@@ -717,6 +750,9 @@ Timestamp: ${new Date().toISOString()}`;
             saveAs(content, fileName);
         }
 
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
         function updateProgress(title, step) {
             document.getElementById('headerTitle').textContent = title;
             if (step === 0) {
